@@ -23,11 +23,62 @@ function normalizeNetwork(raw) {
   return NETWORK_MAP[raw] || raw || 'TBD';
 }
 
+// Classify tournament and round from SportsRadar title field
+function classifyGame(title) {
+  if (!title) return { tournament: 'unknown', round: null, region: null };
+
+  const t = title.toLowerCase();
+
+  // NCAA Tournament uses "Regional" in titles (East Regional, South Regional, etc.)
+  // NCAA First Four uses "First Four" in title
+  // NIT uses city-name "Bracket" (Auburn Bracket, Tulsa Bracket, Wake Forest Bracket, New Mexico Bracket)
+  const NCAA_REGIONS = ['east', 'west', 'south', 'midwest'];
+  const isNCAA = NCAA_REGIONS.some(r => t.includes(r + ' regional')) || t.includes('first four') || t.includes('final four') || t.includes('championship');
+  const isNIT = !isNCAA && t.includes('bracket');
+
+  if (isNIT) {
+    let nitRound = null;
+    if (t.includes('first round')) nitRound = 'NIT First Round';
+    else if (t.includes('second round')) nitRound = 'NIT Second Round';
+    else if (t.includes('quarterfinal')) nitRound = 'NIT Quarterfinal';
+    else if (t.includes('semifinal')) nitRound = 'NIT Semifinal';
+    else if (t.includes('championship') || t.includes('final')) nitRound = 'NIT Championship';
+    else nitRound = 'NIT';
+
+    const bracketMatch = title.match(/^(.+?)\s*Bracket/i);
+    const nitRegion = bracketMatch ? bracketMatch[1] : null;
+
+    return { tournament: 'NIT', round: nitRound, region: nitRegion };
+  }
+
+  // NCAA Tournament
+  let round = null;
+  if (t.includes('first four')) round = 'First Four';
+  else if (t.includes('first round')) round = 'First Round';
+  else if (t.includes('second round')) round = 'Second Round';
+  else if (t.includes('sweet 16') || t.includes('regional semifinal')) round = 'Sweet 16';
+  else if (t.includes('elite 8') || t.includes('elite eight') || t.includes('regional final')) round = 'Elite 8';
+  else if (t.includes('final four') || t.includes('national semifinal')) round = 'Final Four';
+  else if (t.includes('championship') || t.includes('national final')) round = 'Championship';
+
+  // Extract NCAA region
+  let region = null;
+  const regionMatch = title.match(/(East|West|South|Midwest)\s*Regional/i);
+  if (regionMatch) region = regionMatch[1];
+
+  return {
+    tournament: round ? 'NCAA' : 'unknown',
+    round,
+    region,
+  };
+}
+
 // Transform SportsRadar game object into our simplified shape
 function transformGame(g) {
   const home = g.home;
   const away = g.away;
   const broadcast = g.broadcasts?.[0]?.network || 'TBD';
+  const { tournament, round, region } = classifyGame(g.title);
 
   return {
     id: g.id,
@@ -36,6 +87,10 @@ function transformGame(g) {
     period: g.period,
     scheduledAt: g.scheduled,
     network: normalizeNetwork(broadcast),
+    tournament,                  // 'NCAA' | 'NIT' | 'unknown'
+    round,                       // 'First Four' | 'First Round' | 'Second Round' | etc.
+    region,                      // 'East' | 'South' | 'Auburn Bracket' | etc.
+    title: g.title || null,
     home: {
       id: home?.id,
       name: home?.name,

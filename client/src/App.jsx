@@ -7,23 +7,25 @@ import BracketView from './components/BracketView.jsx';
 const ROUND_TABS = [
   { key: 'live', label: 'Live & Scores' },
   { key: 'first-four', label: 'First Four' },
-  { key: 'round-64', label: 'Round of 64' },
-  { key: 'round-32', label: 'Round of 32' },
+  { key: 'first-round', label: 'Round of 64' },
+  { key: 'second-round', label: 'Round of 32' },
   { key: 'sweet-16', label: 'Sweet 16' },
   { key: 'elite-8', label: 'Elite 8' },
   { key: 'final-four', label: 'Final Four' },
   { key: 'championship', label: 'Championship' },
-  { key: 'bracket', label: 'All Games' },
+  { key: 'nit', label: 'NIT' },
+  { key: 'bracket', label: 'All NCAA' },
 ];
 
 const ROUND_FILTER = {
   'first-four': 'First Four',
-  'round-64': 'Round of 64',
-  'round-32': 'Round of 32',
+  'first-round': 'First Round',
+  'second-round': 'Second Round',
   'sweet-16': 'Sweet 16',
   'elite-8': 'Elite 8',
   'final-four': 'Final Four',
   'championship': 'Championship',
+  'nit': '_NIT_',  // special filter
 };
 
 const appStyle = {
@@ -79,18 +81,25 @@ export default function App() {
     return counts;
   }, [games]);
 
+  // Split NCAA vs NIT
+  const ncaaGames = useMemo(() => games.filter(g => g.tournament !== 'NIT'), [games]);
+  const nitGames = useMemo(() => games.filter(g => g.tournament === 'NIT'), [games]);
+
   // Filter games for round-specific tabs
   const filteredGames = useMemo(() => {
+    if (activeTab === 'nit') return nitGames;
+    if (activeTab === 'bracket') return ncaaGames;
     const roundName = ROUND_FILTER[activeTab];
-    if (!roundName) return games;
-    return games.filter(g => g.round === roundName);
-  }, [games, activeTab]);
+    if (!roundName) return ncaaGames;
+    return ncaaGames.filter(g => g.round === roundName);
+  }, [ncaaGames, nitGames, activeTab]);
 
   // Determine which tabs have content
   const availableRounds = useMemo(() => {
-    const rounds = new Set(games.map(g => g.round).filter(Boolean));
+    const rounds = new Set(ncaaGames.map(g => g.round).filter(Boolean));
+    if (nitGames.length > 0) rounds.add('_NIT_');
     return rounds;
-  }, [games]);
+  }, [ncaaGames, nitGames]);
 
   return (
     <div style={appStyle}>
@@ -182,8 +191,8 @@ export default function App() {
       </div>
 
       <div style={{ paddingTop: 8 }}>
-        {activeTab === 'live' && <LivePanel games={games} picks={picks} />}
-        {activeTab === 'bracket' && <BracketView games={games} picks={picks} />}
+        {activeTab === 'live' && <LivePanel games={ncaaGames} picks={picks} />}
+        {activeTab === 'bracket' && <BracketView games={ncaaGames} picks={picks} title="All NCAA Tournament Games" />}
         {ROUND_FILTER[activeTab] && (
           <BracketView games={filteredGames} title={ROUND_FILTER[activeTab]} picks={picks} />
         )}
