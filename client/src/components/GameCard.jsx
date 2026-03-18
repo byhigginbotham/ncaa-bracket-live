@@ -274,7 +274,7 @@ export default function GameCard({ game, picks }) {
 
       {showQuarters && quarters && quarters.length === 0 && (
         <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-          No quarter data available
+          No half data available
         </div>
       )}
     </div>

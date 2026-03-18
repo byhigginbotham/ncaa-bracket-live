@@ -438,9 +438,7 @@ export function createPoller({ apiKey, dataSource, intervalMs, onUpdate, db }) {
         // Persist game state to SQLite
         if (db) {
           db.upsertGames(games);
-        }
 
-          // Record scores on period transitions (for SportsRadar boxscore path)
           for (const game of games) {
             delete game._periods; // don't send to client
 
@@ -448,17 +446,12 @@ export function createPoller({ apiKey, dataSource, intervalMs, onUpdate, db }) {
 
             const prevPeriod = lastPeriodMap.get(game.id) || 0;
 
-            // Period changed — record the score for the completed period
             if (game.period > prevPeriod && prevPeriod > 0) {
               db.recordQuarterScore(game.id, prevPeriod, game.home.score, game.away.score);
             }
-
-            // Game just went to halftime — record end of period 1
             if (game.status === 'halftime' && prevPeriod === 1) {
               db.recordQuarterScore(game.id, 1, game.home.score, game.away.score);
             }
-
-            // Game just closed — record the final period
             if (game.status === 'closed' && prevPeriod > 0) {
               db.recordQuarterScore(game.id, game.period || prevPeriod, game.home.score, game.away.score);
             }
