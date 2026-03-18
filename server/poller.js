@@ -79,15 +79,61 @@ async function fetchBoxscore(gameId, apiKey) {
 // Cache boxscore results so we don't re-fetch every poll
 const boxscoreCache = new Map();
 
+// Tournament date range: First Four through Championship
+const TOURNAMENT_DATES = [
+  // First Four
+  '2026/03/17', '2026/03/18',
+  // Round of 64
+  '2026/03/19', '2026/03/20',
+  // Round of 32
+  '2026/03/21', '2026/03/22',
+  // Sweet 16
+  '2026/03/27', '2026/03/28',
+  // Elite 8
+  '2026/03/29', '2026/03/30',
+  // Final Four
+  '2026/04/04',
+  // Championship
+  '2026/04/06',
+];
+
+// Cache schedule responses for dates with no live games (don't re-fetch past days every poll)
+const scheduleCache = new Map();
+
 async function fetchFromSportsRadar(apiKey) {
-  // Get today's date in YYYY/MM/DD format
-  const now = new Date();
-  const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
-  const url = `${SPORTRADAR_BASE}/games/${dateStr}/schedule.json?api_key=${apiKey}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`SportsRadar responded ${res.status}`);
-  const data = await res.json();
-  const games = (data.games || []).map(transformGame);
+  const allGames = [];
+
+  for (const dateStr of TOURNAMENT_DATES) {
+    // Use cache for past dates (all games closed)
+    if (scheduleCache.has(dateStr)) {
+      allGames.push(...scheduleCache.get(dateStr));
+      continue;
+    }
+
+    await new Promise(r => setTimeout(r, 1100)); // rate limit
+    const url = `${SPORTRADAR_BASE}/games/${dateStr}/schedule.json?api_key=${apiKey}`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.log(`[poller] schedule ${dateStr}: ${res.status}`);
+        continue;
+      }
+      const data = await res.json();
+      const dayGames = (data.games || []).map(transformGame);
+
+      // Cache if all games on this date are closed or scheduled (no live games)
+      const allDone = dayGames.length > 0 && dayGames.every(g => g.status === 'closed');
+      if (allDone) {
+        scheduleCache.set(dateStr, dayGames);
+      }
+
+      allGames.push(...dayGames);
+    } catch (e) {
+      console.error(`[poller] schedule ${dateStr} error:`, e.message);
+    }
+  }
+
+  const games = allGames;
 
   // For closed/inprogress games with null scores, fetch boxscore
   for (const game of games) {
