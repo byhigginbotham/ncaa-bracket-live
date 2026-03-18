@@ -416,29 +416,33 @@ export function createPoller({ apiKey, dataSource, intervalMs, onUpdate, db }) {
         games = getMockGames();
       }
 
+      // Always persist period data to DB (ESPN provides linescores inline, no extra cost)
+      if (db) {
+        for (const game of games) {
+          if (game._periods && game._periods.length > 0) {
+            const currentHalf = game.period || 0;
+            for (const p of game._periods) {
+              if (game.status === 'closed' || p.period < currentHalf) {
+                db.recordQuarterScore(game.id, p.period, p.homeScore, p.awayScore);
+              }
+            }
+          }
+        }
+      }
+
       const hash = hashGames(games);
       if (hash !== lastHash) {
         lastHash = hash;
         onUpdate(games);
 
-        // Persist to SQLite
+        // Persist game state to SQLite
         if (db) {
           db.upsertGames(games);
+        }
 
-          // Record quarter scores on period transitions
+          // Record scores on period transitions (for SportsRadar boxscore path)
           for (const game of games) {
-            // Backfill period scores from boxscore
-            // For closed games: record all halves
-            // For live games: only record completed halves (not the current in-progress half)
-            if (game._periods && game._periods.length > 0) {
-              const currentHalf = game.period || 0;
-              for (const p of game._periods) {
-                if (game.status === 'closed' || p.period < currentHalf) {
-                  db.recordQuarterScore(game.id, p.period, p.homeScore, p.awayScore);
-                }
-              }
-              delete game._periods;
-            }
+            delete game._periods; // don't send to client
 
             if (!game.period || game.status === 'scheduled') continue;
 
