@@ -89,7 +89,7 @@ export default function LivePanel({ games, picks }) {
         : <div style={grid}>{live.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
       }
 
-      {/* Today's upcoming */}
+      {/* Upcoming today */}
       {todayScheduled.length > 0 && (
         <>
           <div style={sectionLabel}>upcoming today</div>
@@ -97,15 +97,7 @@ export default function LivePanel({ games, picks }) {
         </>
       )}
 
-      {/* Future days */}
-      {futureDays.map(day => (
-        <div key={day.key}>
-          <div style={sectionLabel}>{day.label}</div>
-          <div style={grid}>{day.games.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
-        </div>
-      ))}
-
-      {/* Today's finals */}
+      {/* All finals — today first, then past days */}
       {todayFinal.length > 0 && (
         <>
           <div style={sectionLabel}>final — today</div>
@@ -113,7 +105,6 @@ export default function LivePanel({ games, picks }) {
         </>
       )}
 
-      {/* Past days finals */}
       {pastDays.map(day => (
         <div key={day.key}>
           <div style={sectionLabel}>final — {day.label}</div>
