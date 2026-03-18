@@ -5,7 +5,29 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3001';
 
 function formatTime(iso) {
   if (!iso) return '';
-  return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+  const gameDate = new Date(iso);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const gameDay = new Date(gameDate.getFullYear(), gameDate.getMonth(), gameDate.getDate());
+  const diffDays = Math.round((gameDay - today) / 86400000);
+
+  const time = gameDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+  // Today — just the time
+  if (diffDays === 0) return time;
+
+  // This week (1-6 days out) — "Thu 11:15 AM"
+  if (diffDays > 0 && diffDays <= 6) {
+    const day = gameDate.toLocaleDateString([], { weekday: 'short' });
+    return `${day} ${time}`;
+  }
+
+  // Past (yesterday or earlier) — just time
+  if (diffDays < 0 && diffDays >= -1) return time;
+
+  // Beyond this week or further past — "3/26 11:15 AM"
+  const short = `${gameDate.getMonth() + 1}/${gameDate.getDate()}`;
+  return `${short} ${time}`;
 }
 
 function statusLabel(game) {
