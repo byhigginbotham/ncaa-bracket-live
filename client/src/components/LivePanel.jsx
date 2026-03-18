@@ -24,10 +24,32 @@ const emptyNote = {
   padding: '10px 0',
 };
 
+function isToday(isoStr) {
+  if (!isoStr) return false;
+  const gameDate = new Date(isoStr).toLocaleDateString();
+  const today = new Date().toLocaleDateString();
+  return gameDate === today;
+}
+
 export default function LivePanel({ games, picks }) {
   const live = games.filter(g => g.status === 'inprogress' || g.status === 'halftime');
-  const scheduled = games.filter(g => g.status === 'scheduled');
-  const final = games.filter(g => g.status === 'closed');
+  const todayScheduled = games.filter(g => g.status === 'scheduled' && isToday(g.scheduledAt));
+  const todayFinal = games.filter(g => g.status === 'closed' && isToday(g.scheduledAt));
+
+  // Next game day (if no games today)
+  const nextScheduled = games
+    .filter(g => g.status === 'scheduled' && !isToday(g.scheduledAt))
+    .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
+  const nextDay = nextScheduled.length > 0
+    ? new Date(nextScheduled[0].scheduledAt).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })
+    : null;
+  const nextDayGames = nextScheduled.length > 0
+    ? nextScheduled.filter(g => {
+        const d1 = new Date(g.scheduledAt).toLocaleDateString();
+        const d2 = new Date(nextScheduled[0].scheduledAt).toLocaleDateString();
+        return d1 === d2;
+      })
+    : [];
 
   return (
     <div>
@@ -37,17 +59,24 @@ export default function LivePanel({ games, picks }) {
         : <div style={grid}>{live.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
       }
 
-      {scheduled.length > 0 && (
+      {todayScheduled.length > 0 && (
         <>
           <div style={sectionLabel}>upcoming today</div>
-          <div style={grid}>{scheduled.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
+          <div style={grid}>{todayScheduled.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
         </>
       )}
 
-      {final.length > 0 && (
+      {todayScheduled.length === 0 && nextDayGames.length > 0 && (
         <>
-          <div style={sectionLabel}>final</div>
-          <div style={grid}>{final.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
+          <div style={sectionLabel}>next games — {nextDay}</div>
+          <div style={grid}>{nextDayGames.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
+        </>
+      )}
+
+      {todayFinal.length > 0 && (
+        <>
+          <div style={sectionLabel}>final — today</div>
+          <div style={grid}>{todayFinal.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
         </>
       )}
     </div>
