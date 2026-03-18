@@ -372,7 +372,16 @@ export function createPoller({ apiKey, dataSource, intervalMs, onUpdate, db }) {
   let lastHash = null;
   let timer = null;
   let currentInterval = intervalMs;
-  const lastPeriodMap = new Map(); // track period per game for quarter recording
+  const lastPeriodMap = new Map();
+
+  // Poll stats
+  const stats = {
+    pollCount: 0,
+    lastPollAt: null,
+    nextPollAt: null,
+    currentInterval: intervalMs,
+    dataSource,
+  };
 
   function getSmartInterval(games) {
     const hasLive = games.some(g => g.status === 'inprogress' || g.status === 'halftime');
@@ -403,9 +412,15 @@ export function createPoller({ apiKey, dataSource, intervalMs, onUpdate, db }) {
         console.log(`[poller] paused — no upcoming games`);
       }
     }
+    stats.currentInterval = currentInterval;
+    stats.nextPollAt = currentInterval > 0
+      ? new Date(Date.now() + currentInterval).toISOString()
+      : null;
   }
 
   async function poll() {
+    stats.pollCount++;
+    stats.lastPollAt = new Date().toISOString();
     try {
       let games;
       if (dataSource === 'espn') {
@@ -468,11 +483,14 @@ export function createPoller({ apiKey, dataSource, intervalMs, onUpdate, db }) {
 
   return {
     start() {
-      poll(); // immediate first poll
+      poll();
       timer = setInterval(poll, intervalMs);
     },
     stop() {
       clearInterval(timer);
+    },
+    getStats() {
+      return { ...stats };
     },
   };
 }

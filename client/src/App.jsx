@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSocket } from './hooks/useSocket.js';
 import Header from './components/Header.jsx';
 import LivePanel from './components/LivePanel.jsx';
@@ -61,7 +61,20 @@ function tabStyle(active) {
 }
 
 export default function App() {
-  const { games, lastUpdated, connected, picks, picksStatus } = useSocket();
+  const { games, lastUpdated, connected, picks, picksStatus, pollStats } = useSocket();
+
+  // Countdown timer to next poll
+  const [countdown, setCountdown] = useState(null);
+  useEffect(() => {
+    if (!pollStats?.nextPollAt) { setCountdown(null); return; }
+    const tick = () => {
+      const secsLeft = Math.max(0, Math.round((new Date(pollStats.nextPollAt) - Date.now()) / 1000));
+      setCountdown(secsLeft);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [pollStats?.nextPollAt]);
   const [activeTab, setActiveTab] = useState('live');
 
   const liveCount = games.filter(
@@ -206,14 +219,30 @@ export default function App() {
         color: 'var(--text-tertiary)',
         display: 'flex',
         justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 4,
       }}>
-        <span>Polling every 30s · scores via SportsRadar NCAAMB API</span>
-        <span>Channel numbers: Birmingham, AL market · <a
+        <span>
+          {pollStats ? (
+            <>
+              Polls: {pollStats.pollCount}
+              {' · '}
+              {pollStats.currentInterval > 0
+                ? <>Next: {countdown != null ? `${countdown}s` : '...'} · Interval: {Math.round(pollStats.currentInterval / 1000)}s</>
+                : 'Paused'
+              }
+              {' · '}Source: {pollStats.dataSource?.toUpperCase()}
+            </>
+          ) : (
+            'Connecting...'
+          )}
+        </span>
+        <span>Channels: Birmingham, AL · <a
           href="https://tv.youtube.com/guide"
           target="_blank"
           rel="noreferrer"
           style={{ color: 'var(--text-tertiary)' }}
-        >verify at tv.youtube.com</a></span>
+        >tv.youtube.com</a></span>
       </footer>
     </div>
   );

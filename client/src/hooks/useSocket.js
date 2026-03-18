@@ -8,7 +8,8 @@ export function useSocket() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [connected, setConnected] = useState(false);
   const [picks, setPicks] = useState(null);
-  const [picksStatus, setPicksStatus] = useState('loading'); // 'loading' | 'awaiting' | 'ready'
+  const [picksStatus, setPicksStatus] = useState('loading');
+  const [pollStats, setPollStats] = useState(null);
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -25,9 +26,10 @@ export function useSocket() {
       console.log('[socket] disconnected');
     });
 
-    socket.on('scores:update', ({ games, lastUpdated }) => {
+    socket.on('scores:update', ({ games, lastUpdated, pollStats: ps }) => {
       setGames(games || []);
       setLastUpdated(lastUpdated);
+      if (ps) setPollStats(ps);
     });
 
     // Fetch picks once
@@ -56,5 +58,5 @@ export function useSocket() {
     return () => socket.disconnect();
   }, []);
 
-  return { games, lastUpdated, connected, picks, picksStatus };
+  return { games, lastUpdated, connected, picks, picksStatus, pollStats };
 }

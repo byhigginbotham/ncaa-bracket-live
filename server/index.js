@@ -35,7 +35,7 @@ const poller = createPoller({
   onUpdate: (games) => {
     state.games = games;
     state.lastUpdated = new Date().toISOString();
-    io.emit('scores:update', { games, lastUpdated: state.lastUpdated });
+    io.emit('scores:update', { games, lastUpdated: state.lastUpdated, pollStats: poller.getStats() });
     console.log(`[poller] pushed update — ${games.length} games, ${games.filter(g => g.status === 'inprogress').length} live`);
   },
 });
@@ -45,7 +45,7 @@ app.use('/api', createRouter(state, db));
 io.on('connection', (socket) => {
   console.log(`[ws] client connected: ${socket.id}`);
   // Send current state immediately on connect
-  socket.emit('scores:update', { games: state.games, lastUpdated: state.lastUpdated });
+  socket.emit('scores:update', { games: state.games, lastUpdated: state.lastUpdated, pollStats: poller.getStats() });
   socket.on('disconnect', () => console.log(`[ws] client disconnected: ${socket.id}`));
 });
 
