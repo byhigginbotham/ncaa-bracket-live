@@ -4,6 +4,7 @@
 import { getMockBracket } from './mockBracket.js';
 
 const SPORTRADAR_BASE = 'https://api.sportradar.com/ncaamb/trial/v8/en';
+const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball';
 
 // Network mapping: SportsRadar broadcast names → our channel keys
 const NETWORK_MAP = {
@@ -106,6 +107,130 @@ function transformGame(g) {
       seed: away?.seed ?? null,
     },
   };
+}
+
+// ── ESPN API fetcher ────────────────────────────────────────────────────────
+function transformESPNGame(event) {
+  const comp = event.competitions?.[0];
+  if (!comp) return null;
+
+  const statusObj = comp.status || event.status || {};
+  const statusType = statusObj.type?.name || '';
+  let status = 'scheduled';
+  if (statusType === 'STATUS_IN_PROGRESS') status = 'inprogress';
+  else if (statusType === 'STATUS_HALFTIME') status = 'halftime';
+  else if (statusType === 'STATUS_FINAL') status = 'closed';
+  else if (statusType === 'STATUS_END_PERIOD') status = 'inprogress';
+
+  const clock = statusObj.displayClock || null;
+  const period = statusObj.period || null;
+
+  // Competitors: home vs away
+  const teams = comp.competitors || [];
+  const homeTeam = teams.find(t => t.homeAway === 'home') || teams[0];
+  const awayTeam = teams.find(t => t.homeAway === 'away') || teams[1];
+
+  const broadcast = comp.broadcasts?.[0]?.names?.[0] || comp.geoBroadcasts?.[0]?.media?.shortName || 'TBD';
+
+  // Classify tournament from notes/groups
+  const notes = comp.notes?.map(n => n.headline || '').join(' ') || '';
+  const groups = event.competitions?.[0]?.groups?.name || '';
+  const season = event.season?.slug || '';
+  let tournament = 'unknown';
+  let round = null;
+  let region = null;
+
+  const notesLower = (notes + ' ' + groups).toLowerCase();
+  if (notesLower.includes('nit') || season.includes('nit')) {
+    tournament = 'NIT';
+    if (notesLower.includes('first round')) round = 'NIT First Round';
+    else if (notesLower.includes('second round')) round = 'NIT Second Round';
+    else round = 'NIT';
+  } else {
+    tournament = 'NCAA';
+    if (notesLower.includes('first four')) round = 'First Four';
+    else if (notesLower.includes('1st round') || notesLower.includes('first round')) round = 'First Round';
+    else if (notesLower.includes('2nd round') || notesLower.includes('second round')) round = 'Second Round';
+    else if (notesLower.includes('sweet 16')) round = 'Sweet 16';
+    else if (notesLower.includes('elite 8') || notesLower.includes('elite eight')) round = 'Elite 8';
+    else if (notesLower.includes('final four')) round = 'Final Four';
+    else if (notesLower.includes('championship')) round = 'Championship';
+
+    const regionMatch = notes.match(/(East|West|South|Midwest)/i);
+    if (regionMatch) region = regionMatch[1];
+  }
+
+  return {
+    id: event.id,
+    status,
+    clock,
+    period,
+    scheduledAt: event.date || comp.date,
+    network: normalizeNetwork(broadcast),
+    tournament,
+    round,
+    region,
+    title: notes || event.shortName || null,
+    home: {
+      id: homeTeam?.id,
+      name: homeTeam?.team?.displayName || homeTeam?.team?.name,
+      alias: homeTeam?.team?.abbreviation,
+      score: homeTeam?.score ? parseInt(homeTeam.score) : null,
+      seed: homeTeam?.curatedRank?.current || null,
+    },
+    away: {
+      id: awayTeam?.id,
+      name: awayTeam?.team?.displayName || awayTeam?.team?.name,
+      alias: awayTeam?.team?.abbreviation,
+      score: awayTeam?.score ? parseInt(awayTeam.score) : null,
+      seed: awayTeam?.curatedRank?.current || null,
+    },
+    // ESPN provides linescores (points per half)
+    _periods: (homeTeam?.linescores || []).map((ls, i) => ({
+      period: i + 1,
+      homeScore: parseInt(ls.value) || 0,
+      awayScore: parseInt(awayTeam?.linescores?.[i]?.value) || 0,
+    })),
+  };
+}
+
+async function fetchFromESPN() {
+  const allGames = [];
+  const now = new Date();
+
+  // Fetch tournament dates
+  const dates = [];
+  // Scan from 3 days ago to 21 days ahead to cover full tournament
+  for (let d = -3; d <= 21; d++) {
+    const dt = new Date(now);
+    dt.setDate(dt.getDate() + d);
+    dates.push(dt.toISOString().slice(0, 10).replace(/-/g, ''));
+  }
+
+  // ESPN scoreboard can take a dates param
+  for (const dateStr of dates) {
+    try {
+      const url = `${ESPN_BASE}/scoreboard?dates=${dateStr}&groups=100&limit=100`;
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const events = data.events || [];
+      for (const event of events) {
+        const game = transformESPNGame(event);
+        if (game) allGames.push(game);
+      }
+    } catch (e) {
+      // skip failed dates
+    }
+  }
+
+  // Deduplicate by ID
+  const seen = new Set();
+  return allGames.filter(g => {
+    if (seen.has(g.id)) return false;
+    seen.add(g.id);
+    return true;
+  });
 }
 
 // Quick hash to detect score changes without deep equality
@@ -283,7 +408,9 @@ export function createPoller({ apiKey, dataSource, intervalMs, onUpdate, db }) {
   async function poll() {
     try {
       let games;
-      if (dataSource === 'sportradar' && apiKey && apiKey !== 'your_key_here') {
+      if (dataSource === 'espn') {
+        games = await fetchFromESPN();
+      } else if (dataSource === 'sportradar' && apiKey && apiKey !== 'your_key_here') {
         games = await fetchFromSportsRadar(apiKey);
       } else {
         games = getMockGames();
