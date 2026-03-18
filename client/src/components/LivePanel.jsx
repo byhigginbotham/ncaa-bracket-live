@@ -24,11 +24,17 @@ const emptyNote = {
   padding: '10px 0',
 };
 
+function dateKey(isoStr) {
+  if (!isoStr) return '';
+  return new Date(isoStr).toLocaleDateString();
+}
+
 function isToday(isoStr) {
-  if (!isoStr) return false;
-  const gameDate = new Date(isoStr).toLocaleDateString();
-  const today = new Date().toLocaleDateString();
-  return gameDate === today;
+  return dateKey(isoStr) === new Date().toLocaleDateString();
+}
+
+function formatDateHeader(isoStr) {
+  return new Date(isoStr).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
 export default function LivePanel({ games, picks }) {
@@ -36,29 +42,54 @@ export default function LivePanel({ games, picks }) {
   const todayScheduled = games.filter(g => g.status === 'scheduled' && isToday(g.scheduledAt));
   const todayFinal = games.filter(g => g.status === 'closed' && isToday(g.scheduledAt));
 
-  // Next game day (if no games today)
-  const nextScheduled = games
+  // Future scheduled games grouped by date
+  const futureScheduled = games
     .filter(g => g.status === 'scheduled' && !isToday(g.scheduledAt))
     .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
-  const nextDay = nextScheduled.length > 0
-    ? new Date(nextScheduled[0].scheduledAt).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })
-    : null;
-  const nextDayGames = nextScheduled.length > 0
-    ? nextScheduled.filter(g => {
-        const d1 = new Date(g.scheduledAt).toLocaleDateString();
-        const d2 = new Date(nextScheduled[0].scheduledAt).toLocaleDateString();
-        return d1 === d2;
-      })
-    : [];
+
+  const futureDays = [];
+  const seen = new Set();
+  for (const g of futureScheduled) {
+    const dk = dateKey(g.scheduledAt);
+    if (!seen.has(dk)) {
+      seen.add(dk);
+      futureDays.push({
+        key: dk,
+        label: formatDateHeader(g.scheduledAt),
+        games: futureScheduled.filter(fg => dateKey(fg.scheduledAt) === dk),
+      });
+    }
+  }
+
+  // Past final games grouped by date (most recent first)
+  const pastFinal = games
+    .filter(g => g.status === 'closed' && !isToday(g.scheduledAt))
+    .sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt));
+
+  const pastDays = [];
+  const seenPast = new Set();
+  for (const g of pastFinal) {
+    const dk = dateKey(g.scheduledAt);
+    if (!seenPast.has(dk)) {
+      seenPast.add(dk);
+      pastDays.push({
+        key: dk,
+        label: formatDateHeader(g.scheduledAt),
+        games: pastFinal.filter(fg => dateKey(fg.scheduledAt) === dk),
+      });
+    }
+  }
 
   return (
     <div>
+      {/* Live games */}
       <div style={sectionLabel}>live now</div>
       {live.length === 0
         ? <p style={emptyNote}>No games in progress right now</p>
         : <div style={grid}>{live.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
       }
 
+      {/* Today's upcoming */}
       {todayScheduled.length > 0 && (
         <>
           <div style={sectionLabel}>upcoming today</div>
@@ -66,19 +97,29 @@ export default function LivePanel({ games, picks }) {
         </>
       )}
 
-      {todayScheduled.length === 0 && nextDayGames.length > 0 && (
-        <>
-          <div style={sectionLabel}>next games — {nextDay}</div>
-          <div style={grid}>{nextDayGames.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
-        </>
-      )}
+      {/* Future days */}
+      {futureDays.map(day => (
+        <div key={day.key}>
+          <div style={sectionLabel}>{day.label}</div>
+          <div style={grid}>{day.games.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
+        </div>
+      ))}
 
+      {/* Today's finals */}
       {todayFinal.length > 0 && (
         <>
           <div style={sectionLabel}>final — today</div>
           <div style={grid}>{todayFinal.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
         </>
       )}
+
+      {/* Past days finals */}
+      {pastDays.map(day => (
+        <div key={day.key}>
+          <div style={sectionLabel}>final — {day.label}</div>
+          <div style={grid}>{day.games.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
+        </div>
+      ))}
     </div>
   );
 }

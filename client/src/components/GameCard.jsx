@@ -156,7 +156,7 @@ export default function GameCard({ game, picks }) {
         </div>
         {game.away.score !== null && (
           <span style={{ fontSize: 15, fontWeight: 600, color: awayLeads ? '#1D9E75' : 'var(--text)' }}>
-            {game.away.score}
+            {game.status === 'scheduled' ? '–' : game.away.score}
           </span>
         )}
       </div>
@@ -177,7 +177,7 @@ export default function GameCard({ game, picks }) {
         </div>
         {game.home.score !== null && (
           <span style={{ fontSize: 15, fontWeight: 600, color: homeLeads ? '#1D9E75' : 'var(--text)' }}>
-            {game.home.score}
+            {game.status === 'scheduled' ? '–' : game.home.score}
           </span>
         )}
       </div>
