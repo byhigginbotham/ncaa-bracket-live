@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - SPORTRADAR_KEY=${SPORTRADAR_KEY}
+      - DATA_SOURCE=${DATA_SOURCE:-sportradar}
+    volumes:
+      - ./data:/app/data:ro   # hot-reload channels.json without rebuilding
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        - VITE_SERVER_URL=http://localhost:3001
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+
+# Usage:
+#   cp .env.example .env && nano .env   # add your SPORTRADAR_KEY
+#   docker compose up -d
+#   open http://localhost:8080

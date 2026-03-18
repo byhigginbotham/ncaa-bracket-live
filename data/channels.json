@@ -1,0 +1,70 @@
+{
+  "networks": {
+    "ESPN": {
+      "label": "ESPN",
+      "youtubeTV": {
+        "channelNumber": 206,
+        "url": "https://tv.youtube.com",
+        "deepLinkNote": "No public deep-link API — open YouTube TV and navigate to ESPN"
+      }
+    },
+    "ESPN2": {
+      "label": "ESPN2",
+      "youtubeTV": {
+        "channelNumber": 209,
+        "url": "https://tv.youtube.com"
+      }
+    },
+    "ESPNU": {
+      "label": "ESPNU",
+      "youtubeTV": {
+        "channelNumber": 208,
+        "url": "https://tv.youtube.com"
+      }
+    },
+    "CBS": {
+      "label": "CBS",
+      "youtubeTV": {
+        "channelNumber": 4,
+        "url": "https://tv.youtube.com"
+      }
+    },
+    "TBS": {
+      "label": "TBS",
+      "youtubeTV": {
+        "channelNumber": 139,
+        "url": "https://tv.youtube.com"
+      }
+    },
+    "TNT": {
+      "label": "TNT",
+      "youtubeTV": {
+        "channelNumber": 138,
+        "url": "https://tv.youtube.com"
+      }
+    },
+    "truTV": {
+      "label": "truTV",
+      "youtubeTV": {
+        "channelNumber": 246,
+        "url": "https://tv.youtube.com"
+      }
+    },
+    "FS1": {
+      "label": "FS1",
+      "youtubeTV": {
+        "channelNumber": 219,
+        "url": "https://tv.youtube.com"
+      }
+    },
+    "FS2": {
+      "label": "FS2",
+      "youtubeTV": {
+        "channelNumber": 618,
+        "url": "https://tv.youtube.com"
+      }
+    }
+  },
+  "_note": "Channel numbers are for Birmingham, AL market. Verify at tv.youtube.com/guide. Update annually.",
+  "_lastVerified": "2026-03-17"
+}
