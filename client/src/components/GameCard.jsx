@@ -53,6 +53,7 @@ export default function GameCard({ game, picks }) {
 
   const homePicked = picks && picks.has(game.home.alias);
   const awayPicked = picks && picks.has(game.away.alias);
+  const isToday = game.scheduledAt && new Date(game.scheduledAt).toLocaleDateString() === new Date().toLocaleDateString();
 
   const [showQuarters, setShowQuarters] = useState(false);
   const [quarters, setQuarters] = useState(null);
@@ -217,27 +218,29 @@ export default function GameCard({ game, picks }) {
           {game.status === 'inprogress' ? statusLabel(game) : ''}
         </span>
 
-        <button
-          onClick={() => window.open(network.youtubeTV?.url || 'https://tv.youtube.com', '_blank')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
-            fontSize: 11,
-            fontWeight: 500,
-            padding: '3px 9px',
-            borderRadius: 5,
-            border: '0.5px solid var(--border-med)',
-            background: 'transparent',
-            color: 'var(--text)',
-            cursor: 'pointer',
-          }}
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M23.5 7s-.3-2-1.2-2.8c-1.2-1.2-2.5-1.2-3.1-1.3C16.6 2.8 12 2.8 12 2.8s-4.6 0-7.2.2c-.6.1-1.9.1-3.1 1.3C.8 5 .5 7 .5 7S.2 9.3.2 11.5v2.1c0 2.2.3 4.5.3 4.5s.3 2 1.2 2.8c1.2 1.2 2.7 1.1 3.4 1.2C7.2 22.3 12 22.3 12 22.3s4.6 0 7.2-.2c.6-.1 1.9-.1 3.1-1.3.9-.8 1.2-2.8 1.2-2.8s.3-2.3.3-4.5v-2.1C23.8 9.3 23.5 7 23.5 7zm-13.9 8.7V8.3l8.4 4.2-8.4 3.2z"/>
-          </svg>
-          Watch
-        </button>
+        {(isLive || (game.status === 'scheduled' && isToday)) && (
+          <button
+            onClick={() => window.open(network.youtubeTV?.url || 'https://tv.youtube.com', '_blank')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              fontSize: 11,
+              fontWeight: 500,
+              padding: '3px 9px',
+              borderRadius: 5,
+              border: '0.5px solid var(--border-med)',
+              background: 'transparent',
+              color: 'var(--text)',
+              cursor: 'pointer',
+            }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.5 7s-.3-2-1.2-2.8c-1.2-1.2-2.5-1.2-3.1-1.3C16.6 2.8 12 2.8 12 2.8s-4.6 0-7.2.2c-.6.1-1.9.1-3.1 1.3C.8 5 .5 7 .5 7S.2 9.3.2 11.5v2.1c0 2.2.3 4.5.3 4.5s.3 2 1.2 2.8c1.2 1.2 2.7 1.1 3.4 1.2C7.2 22.3 12 22.3 12 22.3s4.6 0 7.2-.2c.6-.1 1.9-.1 3.1-1.3.9-.8 1.2-2.8 1.2-2.8s.3-2.3.3-4.5v-2.1C23.8 9.3 23.5 7 23.5 7zm-13.9 8.7V8.3l8.4 4.2-8.4 3.2z"/>
+            </svg>
+            Watch
+          </button>
+        )}
 
         {isFinal && (
           <button
