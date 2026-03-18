@@ -8,12 +8,10 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
-    environment:
-      - PORT=3001
-      - SPORTRADAR_KEY=${SPORTRADAR_KEY}
-      - DATA_SOURCE=${DATA_SOURCE:-sportradar}
+    env_file:
+      - ./server/.env
     volumes:
-      - ./data:/app/data:ro   # hot-reload channels.json without rebuilding
+      - ./data:/data:ro   # maps to ../data relative to /app (server workdir)
 
   client:
     build:
