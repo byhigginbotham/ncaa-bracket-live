@@ -416,28 +416,26 @@ export function createPoller({ apiKey, dataSource, intervalMs, onUpdate, db }) {
         games = getMockGames();
       }
 
-      // Always persist period data to DB (ESPN provides linescores inline, no extra cost)
-      if (db) {
-        for (const game of games) {
-          if (game._periods && game._periods.length > 0) {
-            const currentHalf = game.period || 0;
-            for (const p of game._periods) {
-              if (game.status === 'closed' || p.period < currentHalf) {
-                db.recordQuarterScore(game.id, p.period, p.homeScore, p.awayScore);
-              }
-            }
-          }
-        }
-      }
-
       const hash = hashGames(games);
       if (hash !== lastHash) {
         lastHash = hash;
         onUpdate(games);
 
-        // Persist game state to SQLite
+        // Persist game state to SQLite — upsert games FIRST, then periods
         if (db) {
           db.upsertGames(games);
+
+          // Persist period/half data (ESPN linescores come inline)
+          for (const game of games) {
+            if (game._periods && game._periods.length > 0) {
+              const currentHalf = game.period || 0;
+              for (const p of game._periods) {
+                if (game.status === 'closed' || p.period < currentHalf) {
+                  db.recordQuarterScore(game.id, p.period, p.homeScore, p.awayScore);
+                }
+              }
+            }
+          }
 
           for (const game of games) {
             delete game._periods; // don't send to client
