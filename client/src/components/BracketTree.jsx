@@ -345,8 +345,8 @@ export default function BracketTree({ games, picks }) {
   }
 
   return (
-    <div style={{ overflowX: 'auto', padding: '16px 0', WebkitOverflowScrolling: 'touch' }}>
-      <div style={{ padding: '0 8px' }}>
+    <div style={{ padding: '16px 0', overflowX: 'hidden' }}>
+      <div style={{ padding: '0 8px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         {/* Top half: East (LTR) | Final Four | West (RTL) */}
         <div style={{
           display: 'flex',
