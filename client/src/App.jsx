@@ -3,9 +3,11 @@ import { useSocket } from './hooks/useSocket.js';
 import Header from './components/Header.jsx';
 import LivePanel from './components/LivePanel.jsx';
 import BracketView from './components/BracketView.jsx';
+import BracketTree from './components/BracketTree.jsx';
 
 const ROUND_TABS = [
   { key: 'live', label: 'Live & Scores' },
+  { key: 'bracket-tree', label: 'Bracket' },
   { key: 'first-four', label: 'First Four' },
   { key: 'first-round', label: 'Round of 64' },
   { key: 'second-round', label: 'Round of 32' },
@@ -36,11 +38,10 @@ const appStyle = {
 
 const tabBar = {
   display: 'flex',
+  flexWrap: 'wrap',
   gap: 0,
   marginBottom: 4,
   borderBottom: '0.5px solid var(--border)',
-  overflowX: 'auto',
-  WebkitOverflowScrolling: 'touch',
 };
 
 function tabStyle(active) {
@@ -56,7 +57,6 @@ function tabStyle(active) {
     transition: 'all 0.15s',
     marginBottom: -1,
     whiteSpace: 'nowrap',
-    flexShrink: 0,
   };
 }
 
@@ -157,10 +157,11 @@ export default function App() {
         {ROUND_TABS.map(tab => {
           const roundName = ROUND_FILTER[tab.key];
           const counts = roundName ? roundCounts[roundName] : null;
-          const hasGames = tab.key === 'live' || tab.key === 'bracket' || availableRounds.has(roundName);
+          const alwaysShow = tab.key === 'live' || tab.key === 'bracket' || tab.key === 'bracket-tree';
+          const hasGames = alwaysShow || availableRounds.has(roundName);
 
           // Don't show empty round tabs
-          if (!hasGames && tab.key !== 'live' && tab.key !== 'bracket') return null;
+          if (!hasGames && !alwaysShow) return null;
 
           return (
             <button
@@ -212,6 +213,7 @@ export default function App() {
 
       <div style={{ paddingTop: 8 }}>
         {activeTab === 'live' && <LivePanel games={ncaaGames} picks={picks} />}
+        {activeTab === 'bracket-tree' && <BracketTree games={ncaaGames} picks={picks} />}
         {activeTab === 'bracket' && <BracketView games={ncaaGames} picks={picks} title="All NCAA Tournament Games" />}
         {ROUND_FILTER[activeTab] && (
           <BracketView games={filteredGames} title={ROUND_FILTER[activeTab]} picks={picks} />
