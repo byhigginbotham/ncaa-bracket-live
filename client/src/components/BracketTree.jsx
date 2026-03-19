@@ -124,7 +124,7 @@ function ConnectorColumn({ sourceRoundIndex, isRTL }) {
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      width: 24,
+      width: 32,
       flexShrink: 0,
       paddingTop: sourceTopPad + 20, // +20 for the round label height
     }}>
@@ -134,7 +134,7 @@ function ConnectorColumn({ sourceRoundIndex, isRTL }) {
 }
 
 // A single column of games for one round
-function RoundColumn({ games, picks, roundIndex, label }) {
+function RoundColumn({ games, picks, roundIndex, label, compact }) {
   const gap = getRoundGap(roundIndex);
   const topPad = getRoundTopPad(roundIndex);
 
@@ -163,7 +163,7 @@ function RoundColumn({ games, picks, roundIndex, label }) {
         paddingTop: topPad,
       }}>
         {games.map((game, i) => (
-          <BracketMatchup key={game ? game.id : `tbd-${i}`} game={game} picks={picks} />
+          <BracketMatchup key={game ? game.id : `tbd-${i}`} game={game} picks={picks} compact={compact} />
         ))}
       </div>
     </div>
@@ -199,6 +199,7 @@ function RegionBracket({ regionName, regionGames, picks, direction }) {
         picks={picks}
         roundIndex={ri}
         label={roundLabels[ri]}
+        compact={ri > 0}
       />
     );
 
@@ -345,7 +346,7 @@ export default function BracketTree({ games, picks }) {
 
   return (
     <div style={{ overflowX: 'auto', padding: '16px 0', WebkitOverflowScrolling: 'touch' }}>
-      <div style={{ minWidth: 1800, padding: '0 16px' }}>
+      <div style={{ minWidth: 1400, padding: '0 16px' }}>
         {/* Top half: East (LTR) | Final Four | West (RTL) */}
         <div style={{
           display: 'flex',

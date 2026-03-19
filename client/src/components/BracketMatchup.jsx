@@ -83,24 +83,28 @@ function TeamRow({ team, opponent, game, picks, isTop }) {
   );
 }
 
-export default function BracketMatchup({ game, picks }) {
+export default function BracketMatchup({ game, picks, compact }) {
   if (!game) {
     // Placeholder TBD slot
     const placeholder = { alias: 'TBD', seed: null, score: null };
     const tbdGame = { status: 'scheduled', home: placeholder, away: placeholder };
-    return <BracketMatchup game={tbdGame} picks={picks} />;
+    return <BracketMatchup game={tbdGame} picks={picks} compact={compact} />;
   }
 
   const isLive = game.status === 'inprogress' || game.status === 'halftime';
+  const isTBD = (!game.home?.alias || game.home.alias === 'TBD') &&
+                (!game.away?.alias || game.away.alias === 'TBD');
+  const width = (compact && isTBD) ? 80 : 160;
 
   const cardStyle = {
-    width: 160,
+    width,
     background: 'var(--bg-secondary)',
     border: '1px solid var(--border)',
     borderRadius: 6,
     borderLeft: isLive ? '3px solid #1D9E75' : '1px solid var(--border)',
     overflow: 'hidden',
     flexShrink: 0,
+    opacity: (compact && isTBD) ? 0.4 : 1,
   };
 
   return (
