@@ -1,6 +1,40 @@
 {
-  "_note": "Bracket picks from Sleeper app. Screenshot your bracket, paste to Claude Code, and it will generate this file.",
-  "_lastUpdated": null,
-  "_status": "awaiting",
-  "picks": {}
+  "_note": "Bracket picks. Screenshot your bracket, paste to Claude Code to regenerate.",
+  "_lastUpdated": "2026-03-19",
+  "_status": "set",
+  "_champion": "DUKE",
+  "_tiebreaker": 120,
+  "picks": {
+    "round-of-64": [
+      "DUKE", "TCU", "SJU", "KU", "USF", "MSU", "UCLA", "CONN",
+      "FLA", "IOWA", "VAN", "TROY", "UNC", "ILL", "TA&M", "HOU",
+      "ARIZ", "USU", "WIS", "ARK", "BYU", "GONZ", "MIA", "PUR",
+      "MICH", "UGA", "TTU", "ALA", "TENN", "UVA", "UK", "ISU"
+    ],
+    "round-of-32": [
+      "DUKE", "SJU", "MSU", "CONN",
+      "FLA", "VAN", "ILL", "HOU",
+      "ARIZ", "ARK", "GONZ", "PUR",
+      "MICH", "ALA", "UVA", "ISU"
+    ],
+    "sweet-16": [
+      "DUKE", "CONN",
+      "FLA", "HOU",
+      "ARIZ", "PUR",
+      "MICH", "ISU"
+    ],
+    "elite-8": [
+      "DUKE",
+      "FLA",
+      "ARIZ",
+      "MICH"
+    ],
+    "final-four": [
+      "DUKE",
+      "ARIZ"
+    ],
+    "championship": [
+      "DUKE"
+    ]
+  }
 }
