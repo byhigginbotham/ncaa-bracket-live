@@ -213,7 +213,11 @@ export default function App() {
 
       <div style={{ paddingTop: 8 }}>
         {activeTab === 'live' && <LivePanel games={ncaaGames} picks={picks} />}
-        {activeTab === 'bracket-tree' && <BracketTree games={ncaaGames} picks={picks} />}
+        {activeTab === 'bracket-tree' && (
+          <div style={{ marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)', width: '100vw', position: 'relative', left: '50%', right: '50%', transform: 'translateX(-50%)' }}>
+            <BracketTree games={ncaaGames} picks={picks} />
+          </div>
+        )}
         {activeTab === 'bracket' && <BracketView games={ncaaGames} picks={picks} title="All NCAA Tournament Games" />}
         {ROUND_FILTER[activeTab] && (
           <BracketView games={filteredGames} title={ROUND_FILTER[activeTab]} picks={picks} />
