@@ -25,7 +25,7 @@ export function createRouter(state, db) {
   // Live games only
   router.get('/games/live', (req, res) => {
     res.json({
-      games: state.games.filter(g => g.status === 'inprogress'),
+      games: state.games.filter(g => g.status === 'inprogress' || g.status === 'halftime'),
       lastUpdated: state.lastUpdated,
     });
   });
@@ -67,7 +67,7 @@ export function createRouter(state, db) {
     res.json({
       status: 'ok',
       games: state.games.length,
-      live: state.games.filter(g => g.status === 'inprogress').length,
+      live: state.games.filter(g => g.status === 'inprogress' || g.status === 'halftime').length,
       lastUpdated: state.lastUpdated,
     });
   });

@@ -36,7 +36,7 @@ const poller = createPoller({
     state.games = games;
     state.lastUpdated = new Date().toISOString();
     io.emit('scores:update', { games, lastUpdated: state.lastUpdated, pollStats: poller.getStats() });
-    console.log(`[poller] pushed update — ${games.length} games, ${games.filter(g => g.status === 'inprogress').length} live`);
+    console.log(`[poller] pushed update — ${games.length} games, ${games.filter(g => g.status === 'inprogress' || g.status === 'halftime').length} live`);
   },
 });
 

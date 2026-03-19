@@ -397,7 +397,7 @@ export function createPoller({ apiKey, dataSource, intervalMs, onUpdate, db }) {
 
     if (soonest && soonest < 3600_000) return 60_000;   // 1 min if game within 1 hour
     if (soonest && soonest < 14400_000) return 300_000;  // 5 min if game within 4 hours
-    return 0; // no polling — no games today or all finished
+    return 300_000; // 5 min fallback — never fully pause during tournament
   }
 
   function reschedule(games) {
