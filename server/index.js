@@ -10,11 +10,18 @@ import * as db from './db.js';
 const app = express();
 const httpServer = createServer(app);
 
+const CORS_ORIGINS = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://YOUR_SERVER_IP:8080',
+  'http://YOUR_DEV_IP:5173',
+];
+
 const io = new Server(httpServer, {
-  cors: { origin: 'http://localhost:5173', methods: ['GET', 'POST'] }
+  cors: { origin: CORS_ORIGINS, methods: ['GET', 'POST'] }
 });
 
-app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(cors({ origin: CORS_ORIGINS }));
 app.use(express.json());
 
 // Initialize SQLite
