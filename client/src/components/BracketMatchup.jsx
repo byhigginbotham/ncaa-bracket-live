@@ -25,22 +25,22 @@ function TeamRow({ team, opponent, game, picks, isTop }) {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '2px 6px',
+    padding: '1px 5px',
     borderTop: isTop ? 'none' : '1px solid var(--border)',
-    minHeight: 26,
+    minHeight: 20,
     gap: 4,
   };
 
   const seedStyle = {
-    fontSize: 9,
+    fontSize: 8,
     color: 'var(--text-tertiary)',
-    minWidth: 14,
+    minWidth: 12,
     textAlign: 'right',
     flexShrink: 0,
   };
 
   const aliasStyle = {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: (isClosed && isWinner) || (!isClosed && isLeading) ? 700 : 400,
     color: isTBD ? 'var(--text-tertiary)' : 'var(--text)',
     fontStyle: isTBD ? 'italic' : 'normal',
@@ -52,7 +52,7 @@ function TeamRow({ team, opponent, game, picks, isTop }) {
   };
 
   const scoreStyle = {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 600,
     color: (isClosed && isWinner) || (!isClosed && isLeading) ? '#1D9E75' : 'var(--text)',
     flexShrink: 0,
@@ -94,7 +94,7 @@ export default function BracketMatchup({ game, picks, compact }) {
   const isLive = game.status === 'inprogress' || game.status === 'halftime';
   const isTBD = (!game.home?.alias || game.home.alias === 'TBD') &&
                 (!game.away?.alias || game.away.alias === 'TBD');
-  const width = (compact && isTBD) ? 80 : 160;
+  const width = (compact && isTBD) ? 70 : 145;
 
   const cardStyle = {
     width,

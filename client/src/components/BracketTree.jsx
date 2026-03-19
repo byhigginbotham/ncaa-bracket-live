@@ -51,8 +51,8 @@ function padRound(games, expectedCount) {
 }
 
 // Shared constants
-const GAME_HEIGHT = 54;
-const BASE_GAP = 6;
+const GAME_HEIGHT = 42;
+const BASE_GAP = 3;
 
 function getRoundGap(roundIndex) {
   return BASE_GAP + (Math.pow(2, roundIndex) - 1) * (GAME_HEIGHT + BASE_GAP);
@@ -126,7 +126,7 @@ function ConnectorColumn({ sourceRoundIndex, isRTL }) {
       flexDirection: 'column',
       width: 32,
       flexShrink: 0,
-      paddingTop: sourceTopPad + 20, // +20 for the round label height
+      paddingTop: sourceTopPad + 14, // offset for round label height
     }}>
       {connectors}
     </div>
@@ -151,7 +151,7 @@ function RoundColumn({ games, picks, roundIndex, label, compact }) {
         textTransform: 'uppercase',
         letterSpacing: '0.08em',
         color: 'var(--text-tertiary)',
-        marginBottom: 6,
+        marginBottom: 3,
         whiteSpace: 'nowrap',
       }}>
         {label}
@@ -221,10 +221,10 @@ function RegionBracket({ regionName, regionGames, picks, direction }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <div style={{
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: 700,
         color: 'var(--text)',
-        marginBottom: 10,
+        marginBottom: 4,
         textAlign: isRTL ? 'right' : 'left',
         textTransform: 'uppercase',
         letterSpacing: '0.06em',
@@ -353,7 +353,7 @@ export default function BracketTree({ games, picks }) {
           alignItems: 'flex-start',
           justifyContent: 'center',
           gap: 0,
-          marginBottom: 40,
+          marginBottom: 16,
         }}>
           {/* East region — left side, LTR */}
           <RegionBracket
