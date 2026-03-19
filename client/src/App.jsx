@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useSocket } from './hooks/useSocket.js';
 import Header from './components/Header.jsx';
 import LivePanel from './components/LivePanel.jsx';
@@ -63,18 +63,25 @@ function tabStyle(active) {
 export default function App() {
   const { games, lastUpdated, connected, picks, picksStatus, pollStats } = useSocket();
 
-  // Countdown timer to next poll
+  // Countdown timer — resets when server pushes new data
   const [countdown, setCountdown] = useState(null);
+  const lastUpdateRef = useRef(lastUpdated);
   useEffect(() => {
-    if (!pollStats?.nextPollAt) { setCountdown(null); return; }
-    const tick = () => {
-      const secsLeft = Math.max(0, Math.round((new Date(pollStats.nextPollAt) - Date.now()) / 1000));
-      setCountdown(secsLeft);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
+    if (!pollStats?.currentInterval || pollStats.currentInterval <= 0) {
+      setCountdown(null);
+      return;
+    }
+    // Reset countdown whenever lastUpdated changes (new poll arrived)
+    const intervalSecs = Math.round(pollStats.currentInterval / 1000);
+    if (lastUpdated !== lastUpdateRef.current) {
+      lastUpdateRef.current = lastUpdated;
+      setCountdown(intervalSecs);
+    }
+    const id = setInterval(() => {
+      setCountdown(prev => prev != null && prev > 0 ? prev - 1 : intervalSecs);
+    }, 1000);
     return () => clearInterval(id);
-  }, [pollStats?.nextPollAt]);
+  }, [lastUpdated, pollStats?.currentInterval]);
   const [activeTab, setActiveTab] = useState('live');
 
   const liveCount = games.filter(
