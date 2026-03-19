@@ -50,119 +50,70 @@ function padRound(games, expectedCount) {
   return result;
 }
 
-// Connector lines between rounds: draws bracket lines pairing games
-function ConnectorColumn({ pairCount, gameHeight, gap, roundIndex }) {
-  // Each pair of games feeds into one next-round game
-  // We draw: horizontal stub from each game, vertical line connecting the pair, horizontal stub to next game
-  const pairHeight = gameHeight * 2 + gap; // height of a pair of source games
-  const connectors = [];
+// Shared constants
+const GAME_HEIGHT = 54;
+const BASE_GAP = 6;
 
-  for (let i = 0; i < pairCount; i++) {
-    connectors.push(
-      <div key={i} style={{
-        position: 'relative',
-        height: pairHeight,
-        width: '100%',
-      }}>
-        {/* Top horizontal line */}
-        <div style={{
-          position: 'absolute',
-          top: gameHeight / 2,
-          left: 0,
-          width: '50%',
-          height: 0,
-          borderTop: '1px solid var(--border-med)',
-        }} />
-        {/* Bottom horizontal line */}
-        <div style={{
-          position: 'absolute',
-          top: gameHeight + gap + gameHeight / 2,
-          left: 0,
-          width: '50%',
-          height: 0,
-          borderTop: '1px solid var(--border-med)',
-        }} />
-        {/* Vertical line connecting the pair */}
-        <div style={{
-          position: 'absolute',
-          top: gameHeight / 2,
-          left: '50%',
-          width: 0,
-          height: gameHeight + gap,
-          borderLeft: '1px solid var(--border-med)',
-        }} />
-        {/* Horizontal stub out to next round */}
-        <div style={{
-          position: 'absolute',
-          top: gameHeight / 2 + (gameHeight + gap) / 2,
-          left: '50%',
-          width: '50%',
-          height: 0,
-          borderTop: '1px solid var(--border-med)',
-        }} />
-      </div>
-    );
-  }
-
-  return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      width: 24,
-      flexShrink: 0,
-    }}>
-      {connectors}
-    </div>
-  );
+function getRoundGap(roundIndex) {
+  return BASE_GAP + (Math.pow(2, roundIndex) - 1) * (GAME_HEIGHT + BASE_GAP);
 }
 
-// Mirrored connector for RTL regions
-function ConnectorColumnRTL({ pairCount, gameHeight, gap }) {
-  const pairHeight = gameHeight * 2 + gap;
-  const connectors = [];
+function getRoundTopPad(roundIndex) {
+  return roundIndex === 0 ? 0 : (Math.pow(2, roundIndex) - 1) * (GAME_HEIGHT + BASE_GAP) / 2;
+}
 
+// Connector lines between rounds
+// sourceRoundIndex = the round these lines come FROM (e.g., 0 for R64→R32 connector)
+function ConnectorColumn({ sourceRoundIndex, isRTL }) {
+  const pairCount = Math.pow(2, 3 - sourceRoundIndex) / 2; // R64:4 pairs, R32:2, S16:1
+  const sourceGap = getRoundGap(sourceRoundIndex);
+  const sourceTopPad = getRoundTopPad(sourceRoundIndex);
+  const pairHeight = GAME_HEIGHT * 2 + sourceGap;
+
+  const connectors = [];
   for (let i = 0; i < pairCount; i++) {
+    const topLine = GAME_HEIGHT / 2;
+    const bottomLine = GAME_HEIGHT + sourceGap + GAME_HEIGHT / 2;
+    const midLine = (topLine + bottomLine) / 2;
+
     connectors.push(
       <div key={i} style={{
         position: 'relative',
         height: pairHeight,
         width: '100%',
+        marginBottom: i < pairCount - 1 ? sourceGap : 0,
       }}>
-        {/* Top horizontal line (from right) */}
+        {/* Top horizontal stub */}
         <div style={{
           position: 'absolute',
-          top: gameHeight / 2,
-          right: 0,
+          top: topLine,
+          [isRTL ? 'right' : 'left']: 0,
           width: '50%',
-          height: 0,
           borderTop: '1px solid var(--border-med)',
         }} />
-        {/* Bottom horizontal line (from right) */}
+        {/* Bottom horizontal stub */}
         <div style={{
           position: 'absolute',
-          top: gameHeight + gap + gameHeight / 2,
-          right: 0,
+          top: bottomLine,
+          [isRTL ? 'right' : 'left']: 0,
           width: '50%',
-          height: 0,
           borderTop: '1px solid var(--border-med)',
         }} />
-        {/* Vertical line connecting the pair */}
+        {/* Vertical line connecting pair */}
         <div style={{
           position: 'absolute',
-          top: gameHeight / 2,
-          right: '50%',
+          top: topLine,
+          [isRTL ? 'right' : 'left']: '50%',
           width: 0,
-          height: gameHeight + gap,
+          height: bottomLine - topLine,
           borderLeft: '1px solid var(--border-med)',
         }} />
-        {/* Horizontal stub out to next round (left) */}
+        {/* Horizontal stub to next round */}
         <div style={{
           position: 'absolute',
-          top: gameHeight / 2 + (gameHeight + gap) / 2,
-          right: '50%',
+          top: midLine,
+          [isRTL ? 'right' : 'left']: '50%',
           width: '50%',
-          height: 0,
           borderTop: '1px solid var(--border-med)',
         }} />
       </div>
@@ -173,9 +124,9 @@ function ConnectorColumnRTL({ pairCount, gameHeight, gap }) {
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center',
       width: 24,
       flexShrink: 0,
+      paddingTop: sourceTopPad + 20, // +20 for the round label height
     }}>
       {connectors}
     </div>
@@ -184,20 +135,8 @@ function ConnectorColumnRTL({ pairCount, gameHeight, gap }) {
 
 // A single column of games for one round
 function RoundColumn({ games, picks, roundIndex, label }) {
-  // Vertical spacing increases with each round to center-align with feeders
-  // R64: no extra gap, R32: 1x extra, S16: 3x extra, E8: 7x extra
-  const GAME_HEIGHT = 54;
-  const BASE_GAP = 6;
-
-  // Calculate the gap multiplier based on round index
-  // Round 0 (R64): gap = BASE_GAP
-  // Round 1 (R32): gap such that each game centers between its two feeder games
-  // etc.
-  const gapMultiplier = Math.pow(2, roundIndex) - 1;
-  const gap = BASE_GAP + gapMultiplier * (GAME_HEIGHT + BASE_GAP);
-
-  // Top padding to center-align with feeder games
-  const topPad = roundIndex === 0 ? 0 : (Math.pow(2, roundIndex) - 1) * (GAME_HEIGHT + BASE_GAP) / 2;
+  const gap = getRoundGap(roundIndex);
+  const topPad = getRoundTopPad(roundIndex);
 
   return (
     <div style={{
@@ -265,29 +204,16 @@ function RegionBracket({ regionName, regionGames, picks, direction }) {
 
     // Add connector after each round except the last
     if (idx < 3) {
+      // For LTR: source is current round (ri), connector pairs its games
+      // For RTL: source is the next column (which is a lower round index)
       const sourceRoundIdx = isRTL ? indices[idx + 1] : ri;
-      const pairCount = ROUND_GAME_COUNT[ROUND_ORDER[sourceRoundIdx]] / 2;
-      const sourceGap = BASE_GAP + (Math.pow(2, sourceRoundIdx) - 1) * (GAME_HEIGHT + BASE_GAP);
-
-      if (isRTL) {
-        columns.push(
-          <ConnectorColumnRTL
-            key={`conn-${idx}`}
-            pairCount={pairCount}
-            gameHeight={GAME_HEIGHT}
-            gap={sourceGap}
-          />
-        );
-      } else {
-        columns.push(
-          <ConnectorColumn
-            key={`conn-${idx}`}
-            pairCount={pairCount}
-            gameHeight={GAME_HEIGHT}
-            gap={sourceGap}
-          />
-        );
-      }
+      columns.push(
+        <ConnectorColumn
+          key={`conn-${idx}`}
+          sourceRoundIndex={sourceRoundIdx}
+          isRTL={isRTL}
+        />
+      );
     }
   }
 
