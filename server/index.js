@@ -13,8 +13,10 @@ const httpServer = createServer(app);
 const CORS_ORIGINS = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-  'http://YOUR_SERVER_IP:8080',
-  'http://YOUR_DEV_IP:5173',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+  // Add LAN/Tailscale origins via CORS_EXTRA env var (comma-separated)
+  ...(process.env.CORS_EXTRA ? process.env.CORS_EXTRA.split(',').map(s => s.trim()) : []),
 ];
 
 const io = new Server(httpServer, {

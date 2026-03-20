@@ -18,7 +18,7 @@ services:
       context: .
       dockerfile: client/Dockerfile
       args:
-        - VITE_SERVER_URL=http://YOUR_SERVER_IP:3001
+        - VITE_SERVER_URL=${VITE_SERVER_URL:-http://localhost:3001}
     restart: unless-stopped
     ports:
       - "8080:80"
