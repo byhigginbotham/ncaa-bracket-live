@@ -30,12 +30,61 @@ function groupGames(games) {
     }
   }
 
-  // Sort each round by scheduledAt
+  // Sort R64 by scheduledAt (these define bracket position order)
   for (const region of Object.values(regions)) {
-    for (const round of Object.values(region)) {
-      round.sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
+    if (region['First Round']) {
+      region['First Round'].sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
     }
   }
+
+  // For R32+, order by matching teams to their feeder games from the previous round
+  // This ensures bracket lines connect correctly regardless of tip-off order
+  for (const region of Object.values(regions)) {
+    const roundNames = ['First Round', 'Second Round', 'Sweet 16', 'Elite Eight'];
+    for (let ri = 1; ri < roundNames.length; ri++) {
+      const prevRound = region[roundNames[ri - 1]];
+      const thisRound = region[roundNames[ri]];
+      if (!prevRound || !thisRound) continue;
+
+      // Build a set of team aliases for each pair of feeder games
+      const pairTeams = [];
+      for (let pi = 0; pi < prevRound.length; pi += 2) {
+        const teams = new Set();
+        for (const g of [prevRound[pi], prevRound[pi + 1]]) {
+          if (g) {
+            if (g.home?.alias) teams.add(g.home.alias);
+            if (g.away?.alias) teams.add(g.away.alias);
+          }
+        }
+        pairTeams.push(teams);
+      }
+
+      // Sort this round's games by which pair they match
+      const ordered = new Array(pairTeams.length).fill(null);
+      const unmatched = [];
+      for (const game of thisRound) {
+        const gameTeams = [game.home?.alias, game.away?.alias].filter(Boolean);
+        let matched = false;
+        for (let pi = 0; pi < pairTeams.length; pi++) {
+          if (ordered[pi]) continue;
+          if (gameTeams.some(t => pairTeams[pi].has(t))) {
+            ordered[pi] = game;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) unmatched.push(game);
+      }
+      // Fill remaining slots with unmatched (TBD) games
+      for (let i = 0; i < ordered.length; i++) {
+        if (!ordered[i] && unmatched.length > 0) {
+          ordered[i] = unmatched.shift();
+        }
+      }
+      region[roundNames[ri]] = ordered.filter(Boolean);
+    }
+  }
+
   finalFour.sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
 
   return { regions, finalFour, championship, firstFour };
