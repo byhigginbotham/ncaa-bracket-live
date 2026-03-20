@@ -30,10 +30,21 @@ function groupGames(games) {
     }
   }
 
-  // Sort R64 by scheduledAt (these define bracket position order)
+  // Sort R64 by standard bracket seed order: 1v16, 8v9, 5v12, 4v13, 6v11, 3v14, 7v10, 2v15
+  // The higher seed (closer to 1) determines bracket position
+  const SEED_ORDER = [1, 8, 5, 4, 6, 3, 7, 2]; // top seeds in bracket position order
+  function getBracketPosition(game) {
+    const topSeed = Math.min(
+      game.home?.seed || 99,
+      game.away?.seed || 99
+    );
+    const idx = SEED_ORDER.indexOf(topSeed);
+    return idx >= 0 ? idx : 99;
+  }
+
   for (const region of Object.values(regions)) {
     if (region['First Round']) {
-      region['First Round'].sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
+      region['First Round'].sort((a, b) => getBracketPosition(a) - getBracketPosition(b));
     }
   }
 
