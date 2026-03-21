@@ -273,7 +273,7 @@ export default function App() {
 
       <div style={{ paddingTop: 8 }}>
         {activeTab === 'live' && <LivePanel games={ncaaGames} picks={picks} mobile={isMobile} />}
-        {activeTab === 'bracket-tree' && !isMobile && (
+        {activeTab === 'bracket-tree' && (
           <div style={{ width: '100vw', marginLeft: 'calc(-50vw + 50%)' }}>
             <BracketTree games={ncaaGames} picks={picks} />
           </div>
