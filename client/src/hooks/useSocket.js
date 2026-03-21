@@ -2,8 +2,12 @@ import { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 
 // Auto-detect server URL: same hostname as browser, port 3001
-const SERVER_URL = import.meta.env.VITE_SERVER_URL
-  ?? `http://${window.location.hostname}:3001`;
+function getServerUrl() {
+  const env = import.meta.env.VITE_SERVER_URL;
+  if (env) return env;
+  return `http://${window.location.hostname}:3001`;
+}
+const SERVER_URL = getServerUrl();
 
 export function useSocket() {
   const [games, setGames] = useState([]);

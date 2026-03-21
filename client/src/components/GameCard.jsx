@@ -1,8 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { getNetwork, getNetworkColor } from '../data/channels.js';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL
-  ?? `http://${window.location.hostname}:3001`;
+function getServerUrl() {
+  const env = import.meta.env.VITE_SERVER_URL;
+  if (env) return env;
+  return `http://${window.location.hostname}:3001`;
+}
+const SERVER_URL = getServerUrl();
 
 function formatTime(iso) {
   if (!iso) return '';
