@@ -44,6 +44,34 @@ const tabBar = {
   borderBottom: '0.5px solid var(--border)',
 };
 
+const tabBarMobile = {
+  display: 'flex',
+  flexWrap: 'nowrap',
+  gap: 0,
+  marginBottom: 4,
+  borderBottom: '0.5px solid var(--border)',
+  overflowX: 'auto',
+  WebkitOverflowScrolling: 'touch',
+  msOverflowStyle: 'none',
+  scrollbarWidth: 'none',
+};
+
+const mobileToggleStyle = (active) => ({
+  padding: '5px 8px',
+  fontSize: 11,
+  cursor: 'pointer',
+  border: `1px solid ${active ? 'var(--text)' : 'var(--border)'}`,
+  background: active ? 'var(--text)' : 'transparent',
+  color: active ? 'var(--bg)' : 'var(--text-secondary)',
+  borderRadius: 5,
+  fontWeight: 500,
+  transition: 'all 0.15s',
+  whiteSpace: 'nowrap',
+  marginLeft: 'auto',
+  flexShrink: 0,
+  lineHeight: 1,
+});
+
 function tabStyle(active) {
   return {
     padding: '7px 12px',
@@ -62,6 +90,18 @@ function tabStyle(active) {
 
 export default function App() {
   const { games, lastUpdated, connected, picks, picksStatus, pollStats } = useSocket();
+
+  // Mobile toggle — persisted in localStorage
+  const [isMobile, setIsMobile] = useState(() => {
+    try { return localStorage.getItem('ncaa_mobile') === 'true'; } catch { return false; }
+  });
+  const toggleMobile = () => {
+    setIsMobile(prev => {
+      const next = !prev;
+      try { localStorage.setItem('ncaa_mobile', String(next)); } catch {}
+      return next;
+    });
+  };
 
   // Countdown timer — resets when server pushes new data
   const [countdown, setCountdown] = useState(null);
@@ -83,6 +123,13 @@ export default function App() {
     return () => clearInterval(id);
   }, [lastUpdated, pollStats?.currentInterval]);
   const [activeTab, setActiveTab] = useState('live');
+
+  // If mobile is toggled on while viewing bracket-tree, redirect to live
+  useEffect(() => {
+    if (isMobile && activeTab === 'bracket-tree') {
+      setActiveTab('live');
+    }
+  }, [isMobile, activeTab]);
 
   const liveCount = games.filter(
     g => g.status === 'inprogress' || g.status === 'halftime'
@@ -122,7 +169,7 @@ export default function App() {
   }, [ncaaGames, nitGames]);
 
   return (
-    <div style={appStyle}>
+    <div style={isMobile ? { ...appStyle, padding: '0 8px 24px', maxWidth: '100%' } : appStyle}>
       <Header connected={connected} lastUpdated={lastUpdated} liveCount={liveCount} />
 
       {picksStatus === 'awaiting' && (
@@ -153,74 +200,95 @@ export default function App() {
         </div>
       )}
 
-      <div style={tabBar}>
-        {ROUND_TABS.map(tab => {
-          const roundName = ROUND_FILTER[tab.key];
-          const counts = roundName ? roundCounts[roundName] : null;
-          const alwaysShow = tab.key === 'live' || tab.key === 'bracket' || tab.key === 'bracket-tree';
-          const hasGames = alwaysShow || availableRounds.has(roundName);
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ ...(isMobile ? tabBarMobile : tabBar), flex: 1, minWidth: 0 }}>
+          {ROUND_TABS.filter(tab => {
+            // On mobile, hide the bracket-tree tab (not useful on small screens)
+            if (isMobile && tab.key === 'bracket-tree') return false;
+            return true;
+          }).map(tab => {
+            const roundName = ROUND_FILTER[tab.key];
+            const counts = roundName ? roundCounts[roundName] : null;
+            const alwaysShow = tab.key === 'live' || tab.key === 'bracket' || tab.key === 'bracket-tree';
+            const hasGames = alwaysShow || availableRounds.has(roundName);
 
-          // Don't show empty round tabs
-          if (!hasGames && !alwaysShow) return null;
+            // Don't show empty round tabs
+            if (!hasGames && !alwaysShow) return null;
 
-          return (
-            <button
-              key={tab.key}
-              style={{
-                ...tabStyle(activeTab === tab.key),
-                opacity: hasGames ? 1 : 0.4,
-              }}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              {tab.label}
-              {tab.key === 'live' && liveCount > 0 && (
-                <span style={{
-                  marginLeft: 5,
-                  background: '#1D9E75',
-                  color: '#fff',
-                  fontSize: 9,
-                  fontWeight: 600,
-                  padding: '1px 5px',
-                  borderRadius: 10,
-                }}>{liveCount}</span>
-              )}
-              {counts && counts.live > 0 && tab.key !== 'live' && (
-                <span style={{
-                  marginLeft: 5,
-                  background: '#1D9E75',
-                  color: '#fff',
-                  fontSize: 9,
-                  fontWeight: 600,
-                  padding: '1px 5px',
-                  borderRadius: 10,
-                }}>{counts.live}</span>
-              )}
-              {counts && counts.final > 0 && counts.final === counts.total && (
-                <span style={{
-                  marginLeft: 5,
-                  background: 'var(--text-tertiary)',
-                  color: 'var(--bg)',
-                  fontSize: 9,
-                  fontWeight: 600,
-                  padding: '1px 5px',
-                  borderRadius: 10,
-                }}>done</span>
-              )}
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={tab.key}
+                style={{
+                  ...tabStyle(activeTab === tab.key),
+                  opacity: hasGames ? 1 : 0.4,
+                }}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.label}
+                {tab.key === 'live' && liveCount > 0 && (
+                  <span style={{
+                    marginLeft: 5,
+                    background: '#1D9E75',
+                    color: '#fff',
+                    fontSize: 9,
+                    fontWeight: 600,
+                    padding: '1px 5px',
+                    borderRadius: 10,
+                  }}>{liveCount}</span>
+                )}
+                {counts && counts.live > 0 && tab.key !== 'live' && (
+                  <span style={{
+                    marginLeft: 5,
+                    background: '#1D9E75',
+                    color: '#fff',
+                    fontSize: 9,
+                    fontWeight: 600,
+                    padding: '1px 5px',
+                    borderRadius: 10,
+                  }}>{counts.live}</span>
+                )}
+                {counts && counts.final > 0 && counts.final === counts.total && (
+                  <span style={{
+                    marginLeft: 5,
+                    background: 'var(--text-tertiary)',
+                    color: 'var(--bg)',
+                    fontSize: 9,
+                    fontWeight: 600,
+                    padding: '1px 5px',
+                    borderRadius: 10,
+                  }}>done</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={toggleMobile}
+          style={mobileToggleStyle(isMobile)}
+          title={isMobile ? 'Switch to desktop view' : 'Switch to mobile view'}
+        >
+          {isMobile ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+          )}
+        </button>
       </div>
 
       <div style={{ paddingTop: 8 }}>
-        {activeTab === 'live' && <LivePanel games={ncaaGames} picks={picks} />}
-        {activeTab === 'bracket-tree' && (
+        {activeTab === 'live' && <LivePanel games={ncaaGames} picks={picks} mobile={isMobile} />}
+        {activeTab === 'bracket-tree' && !isMobile && (
           <div style={{ width: '100vw', marginLeft: 'calc(-50vw + 50%)' }}>
             <BracketTree games={ncaaGames} picks={picks} />
           </div>
         )}
-        {activeTab === 'bracket' && <BracketView games={ncaaGames} picks={picks} title="All NCAA Tournament Games" />}
+        {activeTab === 'bracket' && <BracketView games={ncaaGames} picks={picks} title="All NCAA Tournament Games" mobile={isMobile} />}
         {ROUND_FILTER[activeTab] && (
-          <BracketView games={filteredGames} title={ROUND_FILTER[activeTab]} picks={picks} />
+          <BracketView games={filteredGames} title={ROUND_FILTER[activeTab]} picks={picks} mobile={isMobile} />
         )}
       </div>
 

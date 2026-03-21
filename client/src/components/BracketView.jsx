@@ -18,7 +18,13 @@ const grid = {
   gap: 8,
 };
 
-export default function BracketView({ games, title, picks }) {
+const mobileGrid = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+};
+
+export default function BracketView({ games, title, picks, mobile }) {
   const sorted = [...games].sort((a, b) =>
     new Date(a.scheduledAt) - new Date(b.scheduledAt)
   );
@@ -68,21 +74,21 @@ export default function BracketView({ games, title, picks }) {
         Object.entries(regions).map(([region, regionGames]) => (
           <div key={region}>
             <div style={{
-              fontSize: 11,
+              fontSize: mobile ? 10 : 11,
               fontWeight: 600,
               color: 'var(--text-secondary)',
-              margin: '14px 0 6px',
+              margin: mobile ? '10px 0 4px' : '14px 0 6px',
               paddingLeft: 2,
             }}>
               {region} Region
             </div>
-            <div style={grid}>
+            <div style={mobile ? mobileGrid : grid}>
               {regionGames.map(g => <GameCard key={g.id} game={g} picks={picks} />)}
             </div>
           </div>
         ))
       ) : (
-        <div style={grid}>
+        <div style={mobile ? mobileGrid : grid}>
           {sorted.map(g => <GameCard key={g.id} game={g} picks={picks} />)}
         </div>
       )}

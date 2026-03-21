@@ -18,6 +18,23 @@ const grid = {
   gap: 8,
 };
 
+const mobileGrid = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+};
+
+const mobileSectionLabel = {
+  fontSize: 9,
+  fontWeight: 600,
+  letterSpacing: '0.07em',
+  textTransform: 'uppercase',
+  color: 'var(--text-tertiary)',
+  margin: '12px 0 6px',
+  paddingBottom: 4,
+  borderBottom: '0.5px solid var(--border)',
+};
+
 const emptyNote = {
   fontSize: 13,
   color: 'var(--text-tertiary)',
@@ -37,7 +54,7 @@ function formatDateHeader(isoStr) {
   return new Date(isoStr).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
-export default function LivePanel({ games, picks }) {
+export default function LivePanel({ games, picks, mobile }) {
   const live = games.filter(g => g.status === 'inprogress' || g.status === 'halftime');
   const todayScheduled = games.filter(g => g.status === 'scheduled' && isToday(g.scheduledAt));
   const todayFinal = games.filter(g => g.status === 'closed' && isToday(g.scheduledAt));
@@ -80,35 +97,38 @@ export default function LivePanel({ games, picks }) {
     }
   }
 
+  const g_ = mobile ? mobileGrid : grid;
+  const sl_ = mobile ? mobileSectionLabel : sectionLabel;
+
   return (
     <div>
       {/* Live games */}
-      <div style={sectionLabel}>live now</div>
+      <div style={sl_}>live now</div>
       {live.length === 0
         ? <p style={emptyNote}>No games in progress right now</p>
-        : <div style={grid}>{live.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
+        : <div style={g_}>{live.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
       }
 
       {/* Upcoming today */}
       {todayScheduled.length > 0 && (
         <>
-          <div style={sectionLabel}>upcoming today</div>
-          <div style={grid}>{todayScheduled.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
+          <div style={sl_}>upcoming today</div>
+          <div style={g_}>{todayScheduled.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
         </>
       )}
 
       {/* All finals — today first, then past days */}
       {todayFinal.length > 0 && (
         <>
-          <div style={sectionLabel}>final — today</div>
-          <div style={grid}>{todayFinal.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
+          <div style={sl_}>final — today</div>
+          <div style={g_}>{todayFinal.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
         </>
       )}
 
       {pastDays.map(day => (
         <div key={day.key}>
-          <div style={sectionLabel}>final — {day.label}</div>
-          <div style={grid}>{day.games.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
+          <div style={sl_}>final — {day.label}</div>
+          <div style={g_}>{day.games.map(g => <GameCard key={g.id} game={g} picks={picks} />)}</div>
         </div>
       ))}
     </div>
