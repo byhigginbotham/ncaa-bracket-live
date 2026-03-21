@@ -124,12 +124,6 @@ export default function App() {
   }, [lastUpdated, pollStats?.currentInterval]);
   const [activeTab, setActiveTab] = useState('live');
 
-  // If mobile is toggled on while viewing bracket-tree, redirect to live
-  useEffect(() => {
-    if (isMobile && activeTab === 'bracket-tree') {
-      setActiveTab('live');
-    }
-  }, [isMobile, activeTab]);
 
   const liveCount = games.filter(
     g => g.status === 'inprogress' || g.status === 'halftime'
@@ -203,8 +197,6 @@ export default function App() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <div style={{ ...(isMobile ? tabBarMobile : tabBar), flex: 1, minWidth: 0 }}>
           {ROUND_TABS.filter(tab => {
-            // On mobile, hide the bracket-tree tab (not useful on small screens)
-            if (isMobile && tab.key === 'bracket-tree') return false;
             return true;
           }).map(tab => {
             const roundName = ROUND_FILTER[tab.key];
