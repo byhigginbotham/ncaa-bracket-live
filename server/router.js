@@ -14,10 +14,54 @@ const picks = JSON.parse(
 export function createRouter(state, db) {
   const router = Router();
 
-  // All games (current state)
+  // All games (DB + live state merged)
   router.get('/games', (req, res) => {
+    if (!db) {
+      // Fallback to in-memory if no DB
+      return res.json({ games: state.games, lastUpdated: state.lastUpdated });
+    }
+
+    // Get all games from DB (includes historical rounds ESPN dropped)
+    const dbGames = db.getAllGames();
+
+    // Build a map of DB games, converting DB row format to API format
+    const gameMap = new Map();
+    for (const row of dbGames) {
+      gameMap.set(row.id, {
+        id: row.id,
+        round: row.round,
+        region: row.region,
+        network: row.network,
+        scheduledAt: row.scheduled_at,
+        status: row.status,
+        home: {
+          name: row.home_name,
+          alias: row.home_alias,
+          seed: row.home_seed,
+          score: row.home_score,
+        },
+        away: {
+          name: row.away_name,
+          alias: row.away_alias,
+          seed: row.away_seed,
+          score: row.away_score,
+        },
+        clock: row.clock,
+        period: row.period,
+      });
+    }
+
+    // Overlay live state (fresher scores, clock, status for active games)
+    for (const game of state.games) {
+      gameMap.set(game.id, game);
+    }
+
+    const merged = Array.from(gameMap.values()).sort(
+      (a, b) => (a.scheduledAt || '').localeCompare(b.scheduledAt || '')
+    );
+
     res.json({
-      games: state.games,
+      games: merged,
       lastUpdated: state.lastUpdated,
     });
   });
@@ -64,9 +108,10 @@ export function createRouter(state, db) {
 
   // Health check
   router.get('/health', (req, res) => {
+    const dbCount = db ? db.getAllGames().length : 0;
     res.json({
       status: 'ok',
-      games: state.games.length,
+      games: Math.max(state.games.length, dbCount),
       live: state.games.filter(g => g.status === 'inprogress' || g.status === 'halftime').length,
       lastUpdated: state.lastUpdated,
     });
