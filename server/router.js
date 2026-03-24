@@ -106,6 +106,48 @@ export function createRouter(state, db) {
     res.json(picks);
   });
 
+  // Backfill historical games from ESPN by date range
+  router.get('/backfill', async (req, res) => {
+    if (!db) return res.status(501).json({ error: 'No database configured' });
+
+    const dates = req.query.dates ? req.query.dates.split(',') : [];
+    if (dates.length === 0) {
+      return res.status(400).json({ error: 'Provide ?dates=20260317,20260318,...' });
+    }
+
+    let total = 0;
+    const errors = [];
+
+    for (const date of dates) {
+      try {
+        const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=${date}&limit=100`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+
+        // Import the transformer dynamically
+        const { transformAndClassify } = await import('./poller.js');
+
+        for (const event of (data.events || [])) {
+          const game = transformAndClassify(event);
+          if (game && game.tournament === 'NCAA') {
+            db.upsertGame(game);
+            // Also backfill quarter scores from linescores
+            if (game._periods) {
+              for (const p of game._periods) {
+                db.recordQuarterScore(game.id, p.period, p.homeScore, p.awayScore);
+              }
+            }
+            total++;
+          }
+        }
+      } catch (e) {
+        errors.push({ date, error: e.message });
+      }
+    }
+
+    res.json({ backfilled: total, errors });
+  });
+
   // Health check
   router.get('/health', (req, res) => {
     const dbCount = db ? db.getAllGames().length : 0;

@@ -110,6 +110,11 @@ function transformGame(g) {
 }
 
 // ── ESPN API fetcher ────────────────────────────────────────────────────────
+// Exported for backfill endpoint
+export function transformAndClassify(event) {
+  return transformESPNGame(event);
+}
+
 function transformESPNGame(event) {
   const comp = event.competitions?.[0];
   if (!comp) return null;
