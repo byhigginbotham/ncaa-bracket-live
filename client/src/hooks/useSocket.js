@@ -21,6 +21,18 @@ export function useSocket() {
     socket.on('connect', () => {
       setConnected(true);
       console.log('[socket] connected');
+
+      // Fetch full game list (DB + live merged) on connect
+      // This includes historical rounds ESPN dropped from live feed
+      fetch(`${SERVER_URL}/api/games`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.games) {
+            setGames(data.games);
+            setLastUpdated(data.lastUpdated);
+          }
+        })
+        .catch(() => {});
     });
 
     socket.on('disconnect', () => {
@@ -28,8 +40,18 @@ export function useSocket() {
       console.log('[socket] disconnected');
     });
 
-    socket.on('scores:update', ({ games, lastUpdated, pollStats: ps }) => {
-      setGames(games || []);
+    socket.on('scores:update', ({ games: liveGames, lastUpdated, pollStats: ps }) => {
+      // Merge: keep DB games, overlay live state for fresher scores
+      setGames(prev => {
+        if (!prev || prev.length === 0) return liveGames || [];
+        const map = new Map(prev.map(g => [g.id, g]));
+        for (const g of (liveGames || [])) {
+          map.set(g.id, g); // live data overwrites DB for active games
+        }
+        return Array.from(map.values()).sort(
+          (a, b) => (a.scheduledAt || '').localeCompare(b.scheduledAt || '')
+        );
+      });
       setLastUpdated(lastUpdated);
       if (ps) setPollStats(ps);
     });
