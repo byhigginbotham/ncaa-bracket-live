@@ -34,6 +34,7 @@ export function createRouter(state, db) {
         network: row.network,
         scheduledAt: row.scheduled_at,
         status: row.status,
+        tournament: 'NCAA',
         home: {
           name: row.home_name,
           alias: row.home_alias,
