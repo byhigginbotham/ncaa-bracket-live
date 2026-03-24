@@ -2,9 +2,9 @@ import React, { useMemo } from 'react';
 import BracketMatchup from './BracketMatchup.jsx';
 
 // Round ordering for regional brackets
-const ROUND_ORDER = ['First Round', 'Second Round', 'Sweet 16', 'Elite Eight'];
-const ROUND_SHORT = { 'First Round': 'R64', 'Second Round': 'R32', 'Sweet 16': 'S16', 'Elite Eight': 'E8' };
-const ROUND_GAME_COUNT = { 'First Round': 8, 'Second Round': 4, 'Sweet 16': 2, 'Elite Eight': 1 };
+const ROUND_ORDER = ['First Round', 'Second Round', 'Sweet 16', 'Elite 8'];
+const ROUND_SHORT = { 'First Round': 'R64', 'Second Round': 'R32', 'Sweet 16': 'S16', 'Elite 8': 'E8' };
+const ROUND_GAME_COUNT = { 'First Round': 8, 'Second Round': 4, 'Sweet 16': 2, 'Elite 8': 1 };
 
 // Regions and their flow direction
 const LEFT_REGIONS = ['East', 'South'];
@@ -51,7 +51,7 @@ function groupGames(games) {
   // For R32+, order by matching teams to their feeder games from the previous round
   // This ensures bracket lines connect correctly regardless of tip-off order
   for (const region of Object.values(regions)) {
-    const roundNames = ['First Round', 'Second Round', 'Sweet 16', 'Elite Eight'];
+    const roundNames = ['First Round', 'Second Round', 'Sweet 16', 'Elite 8'];
     for (let ri = 1; ri < roundNames.length; ri++) {
       const prevRound = region[roundNames[ri - 1]];
       const thisRound = region[roundNames[ri]];

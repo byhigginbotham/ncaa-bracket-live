@@ -4,7 +4,10 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DB_PATH = join(__dirname, 'bracket.db');
+// Use /app/db/ volume if available (Docker), fallback to local dir
+import { existsSync, mkdirSync } from 'fs';
+const DB_DIR = existsSync('/app/db') ? '/app/db' : __dirname;
+const DB_PATH = join(DB_DIR, 'bracket.db');
 
 let db;
 

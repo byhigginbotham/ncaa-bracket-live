@@ -12,6 +12,7 @@ services:
       - ./server/.env
     volumes:
       - ./data:/data:ro   # maps to ../data relative to /app (server workdir)
+      - bracket-db:/app/db  # persist SQLite across rebuilds
 
   client:
     build:
@@ -24,6 +25,9 @@ services:
       - "8080:80"
     depends_on:
       - server
+
+volumes:
+  bracket-db:
 
 # Usage:
 #   cp .env.example .env && nano .env   # add your SPORTRADAR_KEY
