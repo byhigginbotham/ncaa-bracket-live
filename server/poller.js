@@ -179,16 +179,16 @@ function transformESPNGame(event) {
     home: {
       id: homeTeam?.id,
       name: homeTeam?.team?.displayName || homeTeam?.team?.name,
-      alias: homeTeam?.team?.abbreviation,
+      alias: homeTeam?.team?.abbreviation || null,
       score: homeTeam?.score ? parseInt(homeTeam.score) : null,
-      seed: homeTeam?.curatedRank?.current || null,
+      seed: (homeTeam?.curatedRank?.current && homeTeam.curatedRank.current < 17) ? homeTeam.curatedRank.current : null,
     },
     away: {
       id: awayTeam?.id,
       name: awayTeam?.team?.displayName || awayTeam?.team?.name,
-      alias: awayTeam?.team?.abbreviation,
+      alias: awayTeam?.team?.abbreviation || null,
       score: awayTeam?.score ? parseInt(awayTeam.score) : null,
-      seed: awayTeam?.curatedRank?.current || null,
+      seed: (awayTeam?.curatedRank?.current && awayTeam.curatedRank.current < 17) ? awayTeam.curatedRank.current : null,
     },
     // ESPN provides linescores (points per half)
     _periods: (homeTeam?.linescores || []).map((ls, i) => ({

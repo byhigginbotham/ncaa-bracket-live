@@ -61,21 +61,31 @@ export function useSocket() {
       .then(r => r.json())
       .then(data => {
         if (!data.picks || Object.keys(data.picks).length === 0 || data._status === 'awaiting') {
-          setPicks(new Set());
+          setPicks(new Map());
           setPicksStatus('awaiting');
         } else {
-          const allPicks = new Set();
-          for (const round of Object.values(data.picks)) {
-            if (Array.isArray(round)) {
-              for (const alias of round) allPicks.add(alias);
+          // Map round keys to game round names for lookup
+          const roundKeyToGameRound = {
+            'round-of-64': 'First Round',
+            'round-of-32': 'Second Round',
+            'sweet-16': 'Sweet 16',
+            'elite-8': 'Elite 8',
+            'final-four': 'Final Four',
+            'championship': 'Championship',
+          };
+          const picksByRound = new Map();
+          for (const [roundKey, teams] of Object.entries(data.picks)) {
+            if (Array.isArray(teams)) {
+              const gameRound = roundKeyToGameRound[roundKey] || roundKey;
+              picksByRound.set(gameRound, new Set(teams));
             }
           }
-          setPicks(allPicks);
+          setPicks(picksByRound);
           setPicksStatus('ready');
         }
       })
       .catch(() => {
-        setPicks(new Set());
+        setPicks(new Map());
         setPicksStatus('awaiting');
       });
 

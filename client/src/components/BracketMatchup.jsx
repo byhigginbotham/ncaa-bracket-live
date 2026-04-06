@@ -18,7 +18,9 @@ function TeamRow({ team, opponent, game, picks, isTop }) {
     team.score !== null && opponent.score !== null &&
     team.score > opponent.score;
 
-  const isPicked = picks && team && picks.has(team.alias);
+  // picks is a Map<roundName, Set<alias>> — check if this team was picked for THIS round
+  const roundPicks = picks && game.round ? picks.get(game.round) : null;
+  const isPicked = roundPicks && team && roundPicks.has(team.alias);
   const pickedAndLost = isPicked && isClosed && opponentWon;
 
   const rowStyle = {

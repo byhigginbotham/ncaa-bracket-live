@@ -51,8 +51,10 @@ export default function GameCard({ game, picks }) {
   const homeLeads = game.home.score !== null && game.home.score > game.away.score;
   const awayLeads = game.away.score !== null && game.away.score > game.home.score;
 
-  const homePicked = picks && picks.has(game.home.alias);
-  const awayPicked = picks && picks.has(game.away.alias);
+  // picks is a Map<roundName, Set<alias>> — check if team was picked for THIS round
+  const roundPicks = picks && game.round ? picks.get(game.round) : null;
+  const homePicked = roundPicks && roundPicks.has(game.home.alias);
+  const awayPicked = roundPicks && roundPicks.has(game.away.alias);
   const isToday = game.scheduledAt && new Date(game.scheduledAt).toLocaleDateString() === new Date().toLocaleDateString();
 
   const [showQuarters, setShowQuarters] = useState(false);
